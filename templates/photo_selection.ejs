@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fotoğraf Seçimi</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        /* Yükleme ekranı stilleri */
+        #loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.9);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .spinner-border {
+            width: 3rem;
+            height: 3rem;
+        }
+
+        .loading-text {
+            margin-top: 1rem;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #555;
+        }
+
+        /* Seçim durumu için fotoğraf stili */
+        .photo-container {
+            position: relative;
+            cursor: pointer;
+        }
+
+        .photo-container img {
+            width: 100%;
+            height: auto;
+            border: 2px solid transparent;
+            transition: border 0.2s ease-in-out, transform 0.2s ease-in-out;
+        }
+
+        .photo-container.selected img {
+            border-color: #007bff;
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <!-- Yükleme ekranı -->
+    <div id="loading-screen">
+        <div>
+            <div class="spinner-border text-primary" role="status"></div>
+            <div class="loading-text">Yakınlarınızdaki ilgiye muhtaç 5 kadın, yapay zeka tarafından seçiliyor</div>
+        </div>
+    </div>
+
+    <!-- Sayfa içeriği -->
+    <div id="content" class="container mt-5" style="display: none;">
+        <h1 class="text-center">Fotoğraf Seçimi</h1>
+        <div class="card shadow p-4">
+            <form id="photo-form" method="POST">
+                <p class="text-center">En az 2, en fazla 3 fotoğraf seçin:</p>
+                <div class="row">
+                    {% for photo in photo_list %}
+                    <div class="col-md-4 text-center photo-container" data-photo="{{ photo }}">
+                        <img src="{{ url_for('photos', filename=photo) }}" alt="{{ photo }}" class="img-thumbnail mb-2">
+                    </div>
+                    {% endfor %}
+                </div>
+                <input type="hidden" id="selected-photos" name="photos">
+                <button type="submit" class="btn btn-primary w-100 mt-3">Devam</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        window.onload = function () {
+            const loadingScreen = document.getElementById('loading-screen');
+            const content = document.getElementById('content');
+
+            // 3-5 saniye rastgele bekleme süresi
+            const waitTime = Math.floor(Math.random() * (5000 - 3000 + 1)) + 3000;
+
+            setTimeout(() => {
+                // Yükleme ekranını gizle ve içeriği göster
+                loadingScreen.style.display = 'none';
+                content.style.display = 'block';
+            }, waitTime);
+        };
+
+        // Fotoğraf seçim işlemi
+        const photoContainers = document.querySelectorAll('.photo-container');
+        const selectedPhotosInput = document.getElementById('selected-photos');
+
+        let selectedPhotos = [];
+
+        photoContainers.forEach(container => {
+            container.addEventListener('click', () => {
+                const photo = container.getAttribute('data-photo');
+
+                if (container.classList.contains('selected')) {
+                    // Fotoğraf zaten seçiliyse kaldır
+                    container.classList.remove('selected');
+                    selectedPhotos = selectedPhotos.filter(item => item !== photo);
+                } else {
+                    // Fotoğraf seçilmediyse ekle (en fazla 3 seçime izin ver)
+                    if (selectedPhotos.length < 3) {
+                        container.classList.add('selected');
+                        selectedPhotos.push(photo);
+                    }
+                }
+
+                // Seçilen fotoğrafları gizli inputa yaz
+                selectedPhotosInput.value = JSON.stringify(selectedPhotos); // Listeyi JSON formatında saklayın
+            });
+        });
+
+        // Form gönderimi sırasında seçim kontrolü
+        document.getElementById('photo-form').addEventListener('submit', function (e) {
+            if (selectedPhotos.length < 2 || selectedPhotos.length > 3) {
+                e.preventDefault();
+                alert("Lütfen en az 2, en fazla 3 fotoğraf seçin.");
+            }
+        });
+
+    </script>
+</body>
+</html>
